@@ -463,7 +463,7 @@ function weatherDescription(code) {
         case 73:
         case 75:
         case 77:
-            return "Snow";
+            return "clear";
 
         case 80:
         case 81:
@@ -472,7 +472,7 @@ function weatherDescription(code) {
 
         case 85:
         case 86:
-            return "Snow Showers";
+            return "clear Showers";
 
         case 95:
         case 96:
@@ -491,16 +491,86 @@ function weatherDescription(code) {
 
 function weatherIcon(code, isDay = true) {
 
+    /*
+        Nighttime icons:
+
+        0  = Clear night
+        1  = Mainly clear night
+        2  = Partly cloudy night
+
+        These MUST NOT display daytime sun icons.
+    */
+
+    if(!isDay) {
+
+        switch(code) {
+
+            case 0:
+                return "🌙";
+
+            case 1:
+                return "🌙";
+
+            case 2:
+                return "☁️";
+
+            case 3:
+                return "☁️";
+
+            case 45:
+            case 48:
+                return "🌫️";
+
+            case 51:
+            case 53:
+            case 55:
+            case 56:
+            case 57:
+                return "🌧️";
+
+            case 61:
+            case 63:
+            case 65:
+            case 66:
+            case 67:
+            case 80:
+            case 81:
+            case 82:
+                return "🌧️";
+
+            case 71:
+            case 73:
+            case 75:
+            case 77:
+            case 85:
+            case 86:
+                return "❄️";
+
+            case 95:
+            case 96:
+            case 99:
+                return "⛈️";
+
+            default:
+                return "🌙";
+        }
+    }
+
+
+    /*
+        DAYTIME ICONS
+    */
+
     switch(code) {
 
         case 0:
-            return isDay ? "☀️" : "🌙";
+            return "☀️";
 
         case 1:
-            return isDay ? "🌤️" : "🌙";
+            return "🌤️";
 
         case 2:
-            return isDay ? "⛅" : "☁️";
+            return "⛅";
 
         case 3:
             return "☁️";
@@ -552,7 +622,7 @@ function weatherIcon(code, isDay = true) {
 function chooseVideo(code, isDay) {
 
     if(!isDay && code === 0) {
-        return "videos/night_clear.mp4";
+        return "videos/night.clear.mp4";
     }
 
     switch(code) {
@@ -562,37 +632,37 @@ function chooseVideo(code, isDay) {
 
         case 1:
             return isDay
-                ? "videos/clear.mp4"
-                : "videos/night_clear.mp4";
+                ? "/Users/matt/Desktop/clear.mp4"
+                : "/Users/matt/Desktop/clear.mp4";
 
         case 2:
-            return "videos/mostly_cloudy.mp4";
+            return "/Users/matt/Desktop/clear.mp4";
 
         case 3:
-            return "videos/overcast.mp4";
+            return "/Users/matt/Desktop/clear.mp4";
 
         case 45:
         case 48:
-            return "videos/overcast.mp4";
+            return "/Users/matt/Desktop/clear.mp4";
 
         case 51:
         case 53:
         case 55:
         case 56:
         case 57:
-            return "videos/light_rain.mp4";
+            return "/Users/matt/Desktop/clear.mp4";
 
         case 61:
         case 63:
         case 80:
         case 81:
-            return "videos/rain.mp4";
+            return "/Users/matt/Desktop/clear.mp4";
 
         case 65:
         case 66:
         case 67:
         case 82:
-            return "videos/rain.mp4";
+            return "/Users/matt/Desktop/clear.mp4";
 
         case 71:
         case 73:
@@ -600,15 +670,15 @@ function chooseVideo(code, isDay) {
         case 77:
         case 85:
         case 86:
-            return "videos/snow.mp4";
+            return "/Users/matt/Desktop/clear.mp4";
 
         case 95:
         case 96:
         case 99:
-            return "videos/thunder.mp4";
+            return "/Users/matt/Desktop/clear.mp4";
 
         default:
-            return "videos/partly_cloudy.mp4";
+            return "/Users/matt/Desktop/clear.mp4";
     }
 }
 
@@ -1232,4 +1302,3 @@ setInterval(
 
 </body>
 </html>
-
