@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,height=device-height,initial-scale=1">
+
+<title>BTV Weather Dashboard</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+
+    font-family: Arial, Helvetica, sans-serif;
+
+    color: white;
+    background: transparent;
+}
+
+/* ============================================================
+   VIDEO BACKGROUND
+   ============================================================ */
+
+#bgVideo {
+    position: fixed;
+    inset: 0;
+
+    width: 100vw;
+    height: 100vh;
+
+    object-fit: cover;
+
+    z-index: -100;
+}
+
+/* ============================================================
+   DARK OVERLAY
+   ============================================================ */
+
+#overlay {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(0,0,0,0.45);
+
+    z-index: -90;
+}
+
+/* ============================================================
+   MAIN LAYOUT
+   ============================================================ */
+
+#layout {
+    width: 100vw;
+    height: 100vh;
+
+    display: grid;
+
+    grid-template-columns: 50% 50%;
+    grid-template-rows: 50% 50%;
+
+    grid-template-areas:
+        "temp today"
+        "forecast forecast";
+}
+
+/* ============================================================
+   QUADRANT IV
+   CURRENT TEMPERATURE
+   ============================================================ */
+
+#tempPanel {
+    grid-area: temp;
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+}
+
+#temp {
+    font-size: 22vw;
+
+    font-weight: 700;
+
+    line-height: 1;
+
+    text-shadow:
+        0 0 25px rgba(0,0,0,.8);
+}
+
+/* ============================================================
+   QUADRANT I
+   TODAY / TOMORROW FORECAST
+   ============================================================ */
+
+#todayPanel {
+    grid-area: today;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+
+    text-align: center;
+}
+
+#todayTitle {
+    font-size: 2.5rem;
+
+    font-weight: bold;
+
+    margin-bottom: 12px;
+
+    text-shadow:
+        0 0 10px rgba(0,0,0,.8);
+}
+
+#todayIcon {
+    font-size: 8rem;
+
+    line-height: 1;
+
+    filter:
+        drop-shadow(0 0 15px rgba(0,0,0,.7));
+}
+
+#todayCondition {
+    margin-top: 12px;
+
+    font-size: 3.2rem;
+
+    font-weight: bold;
+
+    text-shadow:
+        0 0 15px rgba(0,0,0,.8);
+}
+
+#todayTemps {
+    margin-top: 20px;
+
+    font-size: 2.8rem;
+
+    font-weight: bold;
+
+    text-shadow:
+        0 0 12px rgba(0,0,0,.8);
+}
+
+#todayRain {
+    margin-top: 12px;
+
+    font-size: 1.8rem;
+
+    color: #dddddd;
+
+    text-shadow:
+        0 0 10px rgba(0,0,0,.8);
+}
+
+/* ============================================================
+   BOTTOM HOURLY FORECAST
+   ============================================================ */
+
+#forecastPanel {
+    grid-area: forecast;
+
+    display: flex;
+
+    flex-direction: column;
+
+    padding: 20px 30px 30px 30px;
+}
+
+#forecastTitle {
+    font-size: 2.5rem;
+
+    text-align: center;
+
+    margin-bottom: 15px;
+
+    font-weight: bold;
+
+    text-shadow:
+        0 0 10px rgba(0,0,0,.8);
+}
+
+#forecast {
+    flex: 1;
+
+    display: flex;
+
+    gap: 12px;
+}
+
+/* ============================================================
+   HOURLY FORECAST CARDS
+   ============================================================ */
+
+.hour {
+    flex: 1;
+
+    min-width: 0;
+
+    background: rgba(0,0,0,.35);
+
+    border: 1px solid rgba(255,255,255,.15);
+
+    border-radius: 20px;
+
+    backdrop-filter: blur(3px);
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: space-evenly;
+
+    align-items: center;
+}
+
+.hourTime {
+    font-size: 1.9rem;
+
+    font-weight: bold;
+}
+
+.hourIcon {
+    font-size: 3.5rem;
+
+    line-height: 1;
+}
+
+.hourTemp {
+    font-size: 2.3rem;
+
+    font-weight: bold;
+}
+
+.hourPop {
+    font-size: 1.2rem;
+
+    color: #dddddd;
+}
+
+/* ============================================================
+   ERROR MESSAGE
+   ============================================================ */
+
+#error {
+    position: fixed;
+
+    bottom: 15px;
+    left: 15px;
+
+    color: #ff8080;
+
+    font-size: 1rem;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- ============================================================
+     VIDEO BACKGROUND
+     ============================================================ -->
+
+<video
+    id="bgVideo"
+    autoplay
+    muted
+    loop
+    playsinline>
+</video>
+
+<div id="overlay"></div>
+
+
+<!-- ============================================================
+     MAIN LAYOUT
+     ============================================================ -->
+
+<div id="layout">
+
+
+    <!-- ========================================================
+         QUADRANT IV
+         CURRENT TEMPERATURE
+         ======================================================== -->
+
+    <div id="tempPanel">
+
+        <div id="temp">
+            --°
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         QUADRANT I
+         TODAY / TOMORROW FORECAST
+         ======================================================== -->
+
+    <div id="todayPanel">
+
+        <div id="todayTitle">
+            Today's Forecast
+        </div>
+
+        <div id="todayIcon">
+            ☀️
+        </div>
+
+        <div id="todayCondition">
+            Loading...
+        </div>
+
+        <div id="todayTemps">
+            High --° / Low --°
+        </div>
+
+        <div id="todayRain">
+            --% chance of precipitation
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         BOTTOM HALF
+         HOURLY FORECAST
+         ======================================================== -->
+
+    <div id="forecastPanel">
+
+        <div id="forecastTitle">
+            Hourly Forecast
+        </div>
+
+        <div id="forecast"></div>
+
+    </div>
+
+</div>
+
+
+<div id="error"></div>
+
+
+<script>
+
+/****************************************************************
+    LOCATION
+
+    Burlington, Vermont
+****************************************************************/
+
+const LATITUDE = 44.4759;
+const LONGITUDE = -73.2121;
+
+const TIMEZONE = "America/New_York";
+
+
+/****************************************************************
+    OPEN-METEO API
+
+    No API key required.
+****************************************************************/
+
+const WEATHER_URL =
+    "https://api.open-meteo.com/v1/forecast" +
+
+    "?latitude=" + LATITUDE +
+    "&longitude=" + LONGITUDE +
+
+    "&current=" +
+    "temperature_2m," +
+    "apparent_temperature," +
+    "relative_humidity_2m," +
+    "wind_speed_10m," +
+    "weather_code," +
+    "is_day" +
+
+    "&hourly=" +
+    "temperature_2m," +
+    "precipitation_probability," +
+    "weather_code," +
+    "is_day" +
+
+    "&daily=" +
+    "weather_code," +
+    "temperature_2m_max," +
+    "temperature_2m_min," +
+    "precipitation_probability_max" +
+
+    "&temperature_unit=fahrenheit" +
+
+    "&wind_speed_unit=mph" +
+
+    "&precipitation_unit=inch" +
+
+    "&timezone=" +
+    encodeURIComponent(TIMEZONE) +
+
+    "&forecast_days=7";
+
+
+/****************************************************************
+    WEATHER CODE -> DESCRIPTION
+****************************************************************/
+
+function weatherDescription(code) {
+
+    switch(code) {
+
+        case 0:
+            return "Clear";
+
+        case 1:
+            return "Mainly Clear";
+
+        case 2:
+            return "Partly Cloudy";
+
+        case 3:
+            return "Overcast";
+
+        case 45:
+        case 48:
+            return "Fog";
+
+        case 51:
+        case 53:
+        case 55:
+            return "Drizzle";
+
+        case 56:
+        case 57:
+            return "Freezing Drizzle";
+
+        case 61:
+        case 63:
+        case 65:
+            return "Rain";
+
+        case 66:
+        case 67:
+            return "Freezing Rain";
+
+        case 71:
+        case 73:
+        case 75:
+        case 77:
+            return "Snow";
+
+        case 80:
+        case 81:
+        case 82:
+            return "Rain Showers";
+
+        case 85:
+        case 86:
+            return "Snow Showers";
+
+        case 95:
+        case 96:
+        case 99:
+            return "Thunderstorm";
+
+        default:
+            return "Unknown";
+    }
+}
+
+
+/****************************************************************
+    WEATHER CODE -> ICON
+****************************************************************/
+
+function weatherIcon(code, isDay = true) {
+
+    switch(code) {
+
+        case 0:
+            return isDay ? "☀️" : "🌙";
+
+        case 1:
+            return isDay ? "🌤️" : "🌙";
+
+        case 2:
+            return isDay ? "⛅" : "☁️";
+
+        case 3:
+            return "☁️";
+
+        case 45:
+        case 48:
+            return "🌫️";
+
+        case 51:
+        case 53:
+        case 55:
+        case 56:
+        case 57:
+            return "🌦️";
+
+        case 61:
+        case 63:
+        case 65:
+        case 66:
+        case 67:
+        case 80:
+        case 81:
+        case 82:
+            return "🌧️";
+
+        case 71:
+        case 73:
+        case 75:
+        case 77:
+        case 85:
+        case 86:
+            return "❄️";
+
+        case 95:
+        case 96:
+        case 99:
+            return "⛈️";
+
+        default:
+            return "🌤️";
+    }
+}
+
+
+/****************************************************************
+    WEATHER CODE -> VIDEO
+****************************************************************/
+
+function chooseVideo(code, isDay) {
+
+    if(!isDay && code === 0) {
+        return "videos/night_clear.mp4";
+    }
+
+    switch(code) {
+
+        case 0:
+            return "videos/overcast.mp4";
+
+        case 1:
+            return isDay
+                ? "videos/clear.mp4"
+                : "videos/night_clear.mp4";
+
+        case 2:
+            return "videos/mostly_cloudy.mp4";
+
+        case 3:
+            return "videos/overcast.mp4";
+
+        case 45:
+        case 48:
+            return "videos/overcast.mp4";
+
+        case 51:
+        case 53:
+        case 55:
+        case 56:
+        case 57:
+            return "videos/light_rain.mp4";
+
+        case 61:
+        case 63:
+        case 80:
+        case 81:
+            return "videos/rain.mp4";
+
+        case 65:
+        case 66:
+        case 67:
+        case 82:
+            return "videos/rain.mp4";
+
+        case 71:
+        case 73:
+        case 75:
+        case 77:
+        case 85:
+        case 86:
+            return "videos/snow.mp4";
+
+        case 95:
+        case 96:
+        case 99:
+            return "videos/thunder.mp4";
+
+        default:
+            return "videos/partly_cloudy.mp4";
+    }
+}
+
+
+/****************************************************************
+    VIDEO MANAGEMENT
+****************************************************************/
+
+function setBackgroundVideo(path) {
+
+    const video =
+        document.getElementById("bgVideo");
+
+    if(video.dataset.current === path) {
+        return;
+    }
+
+    video.dataset.current = path;
+
+    video.src = path;
+
+    video.load();
+
+    video.play().catch(() => {});
+}
+
+
+/****************************************************************
+    GET BURLINGTON LOCAL DATE/TIME
+****************************************************************
+
+    IMPORTANT:
+
+    Open-Meteo gives us timestamps in the requested timezone:
+
+        America/New_York
+
+    We therefore do NOT use:
+
+        new Date("2026-10-07T11:00")
+
+    to determine the forecast hour.
+
+    That can depend on the timezone configured on
+    the Raspberry Pi.
+
+    Instead, we use Intl.DateTimeFormat with the
+    Burlington timezone explicitly.
+****************************************************************/
+
+function getLocalDateParts() {
+
+    const now = new Date();
+
+    const formatter =
+        new Intl.DateTimeFormat(
+            "en-US",
+            {
+                timeZone: TIMEZONE,
+
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+
+                hour: "2-digit",
+                minute: "2-digit",
+
+                hourCycle: "h23"
+            }
+        );
+
+    const parts =
+        formatter.formatToParts(now);
+
+    const result = {};
+
+    parts.forEach(part => {
+
+        if(part.type !== "literal") {
+            result[part.type] = part.value;
+        }
+
+    });
+
+    return {
+        year: Number(result.year),
+        month: Number(result.month),
+        day: Number(result.day),
+        hour: Number(result.hour),
+        minute: Number(result.minute)
+    };
+}
+
+
+/****************************************************************
+    FIND CURRENT HOURLY INDEX
+****************************************************************/
+
+function findCurrentHour(hourly) {
+
+    const local =
+        getLocalDateParts();
+
+
+    const target =
+        local.year +
+        "-" +
+        String(local.month).padStart(2, "0") +
+        "-" +
+        String(local.day).padStart(2, "0") +
+        "T" +
+        String(local.hour).padStart(2, "0") +
+        ":00";
+
+
+    /*
+        Because Open-Meteo is configured with
+        America/New_York, its hourly timestamps
+        use this exact format.
+    */
+
+    const index =
+        hourly.time.indexOf(target);
+
+
+    if(index !== -1) {
+        return index;
+    }
+
+
+    /*
+        Safety fallback.
+
+        Find the first forecast hour whose
+        date/time is at or after the current
+        Burlington hour.
+
+        This comparison is safe because both
+        strings use the same YYYY-MM-DDTHH:MM
+        format.
+    */
+
+    for(
+        let i = 0;
+        i < hourly.time.length;
+        i++
+    ) {
+
+        if(hourly.time[i] >= target) {
+            return i;
+        }
+
+    }
+
+
+    return -1;
+}
+
+
+/****************************************************************
+    FORMAT HOURLY TIME
+****************************************************************/
+
+function formatForecastTime(timeString) {
+
+    /*
+        The string looks like:
+
+        2026-10-07T13:00
+
+        We only need the hour, so don't
+        convert it through JavaScript Date.
+    */
+
+    const hour =
+        Number(
+            timeString.substring(
+                11,
+                13
+            )
+        );
+
+
+    const suffix =
+        hour >= 12
+            ? "PM"
+            : "AM";
+
+
+    let displayHour =
+        hour % 12;
+
+
+    if(displayHour === 0) {
+        displayHour = 12;
+    }
+
+
+    return (
+        displayHour +
+        suffix
+    );
+}
+
+
+/****************************************************************
+    WEATHER UPDATE
+****************************************************************/
+
+async function updateWeather() {
+
+    try {
+
+        document.getElementById(
+            "error"
+        ).textContent = "";
+
+
+        /************************************************
+            GET WEATHER DATA
+        ************************************************/
+
+        const response =
+            await fetch(
+                WEATHER_URL
+            );
+
+
+        if(!response.ok) {
+
+            throw new Error(
+                "Weather server returned " +
+                response.status
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        /************************************************
+            CURRENT CONDITIONS
+        ************************************************/
+
+        const current =
+            data.current;
+
+        const currentCode =
+            current.weather_code;
+
+        const currentIsDay =
+            current.is_day === 1;
+
+
+        /************************************************
+            QUADRANT IV
+            CURRENT TEMPERATURE
+        ************************************************/
+
+        document.getElementById(
+            "temp"
+        ).textContent =
+
+            Math.round(
+                current.temperature_2m
+            ) +
+
+            "°";
+
+
+        /************************************************
+            BACKGROUND VIDEO
+
+            Always represents conditions
+            happening RIGHT NOW.
+        ************************************************/
+
+        setBackgroundVideo(
+
+            chooseVideo(
+                currentCode,
+                currentIsDay
+            )
+
+        );
+
+
+        /************************************************
+            DAILY FORECAST
+        ************************************************/
+
+        const daily =
+            data.daily;
+
+
+        /*
+            Get the actual Burlington time.
+
+            This is deliberately NOT based on
+            the Pi's system timezone.
+        */
+
+        const local =
+            getLocalDateParts();
+
+
+        /************************************************
+            CHOOSE TODAY OR TOMORROW
+        ************************************************/
+
+        let dayIndex = 0;
+
+
+        /*
+            Before 7:30 PM:
+
+                Today's forecast
+
+            At or after 7:30 PM:
+
+                Tomorrow's forecast
+        */
+
+        if(
+            local.hour > 19 ||
+            (
+                local.hour === 19 &&
+                local.minute >= 30
+            )
+        ) {
+
+            dayIndex = 1;
+        }
+
+
+        /************************************************
+            SELECT DAILY FORECAST
+        ************************************************/
+
+        const forecastCode =
+            daily.weather_code[
+                dayIndex
+            ];
+
+        const forecastHigh =
+            Math.round(
+                daily.temperature_2m_max[
+                    dayIndex
+                ]
+            );
+
+        const forecastLow =
+            Math.round(
+                daily.temperature_2m_min[
+                    dayIndex
+                ]
+            );
+
+        const forecastRain =
+            daily.precipitation_probability_max[
+                dayIndex
+            ];
+
+
+        /************************************************
+            QUADRANT I TITLE
+        ************************************************/
+
+        document.getElementById(
+            "todayTitle"
+        ).textContent =
+
+            dayIndex === 0
+                ? "Today's Forecast"
+                : "Tomorrow's Forecast";
+
+
+        /************************************************
+            QUADRANT I ICON
+        ************************************************/
+
+        document.getElementById(
+            "todayIcon"
+        ).textContent =
+
+            weatherIcon(
+                forecastCode,
+                true
+            );
+
+
+        /************************************************
+            QUADRANT I DESCRIPTION
+        ************************************************/
+
+        document.getElementById(
+            "todayCondition"
+        ).textContent =
+
+            weatherDescription(
+                forecastCode
+            );
+
+
+        /************************************************
+            QUADRANT I HIGH / LOW
+        ************************************************/
+
+        document.getElementById(
+            "todayTemps"
+        ).textContent =
+
+            "High " +
+            forecastHigh +
+            "° / Low " +
+            forecastLow +
+            "°";
+
+
+        /************************************************
+            QUADRANT I PRECIPITATION
+        ************************************************/
+
+        document.getElementById(
+            "todayRain"
+        ).textContent =
+
+            forecastRain +
+            "% chance of precipitation";
+
+
+        /************************************************
+            HOURLY FORECAST
+        ************************************************/
+
+        const hourly =
+            data.hourly;
+
+        const forecast =
+            document.getElementById(
+                "forecast"
+            );
+
+        forecast.innerHTML = "";
+
+
+        /************************************************
+            FIND CURRENT HOUR
+        ************************************************/
+
+        const currentIndex =
+            findCurrentHour(
+                hourly
+            );
+
+
+        if(currentIndex === -1) {
+
+            throw new Error(
+                "Unable to locate current forecast hour."
+            );
+        }
+
+
+        /************************************************
+            SHOW NOW + NEXT 9 HOURS
+        ************************************************/
+
+        for(
+            let offset = 0;
+            offset <= 9;
+            offset++
+        ) {
+
+            const index =
+                currentIndex +
+                offset;
+
+
+            if(
+                index >=
+                hourly.time.length
+            ) {
+
+                break;
+            }
+
+
+            /********************************************
+                CREATE CARD
+            ********************************************/
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "hour";
+
+
+            /********************************************
+                HOURLY DATA
+            ********************************************/
+
+            const time =
+                hourly.time[index];
+
+            const temperature =
+                Math.round(
+                    hourly.temperature_2m[
+                        index
+                    ]
+                );
+
+            const pop =
+                hourly.precipitation_probability[
+                    index
+                ];
+
+            const code =
+                hourly.weather_code[
+                    index
+                ];
+
+            const isDay =
+                hourly.is_day[
+                    index
+                ] === 1;
+
+
+            /********************************************
+                TIME LABEL
+            ********************************************/
+
+            const timeLabel =
+
+                offset === 0
+
+                    ? "NOW"
+
+                    : formatForecastTime(
+                        time
+                    );
+
+
+            /********************************************
+                CARD CONTENT
+            ********************************************/
+
+            card.innerHTML = `
+
+                <div class="hourTime">
+                    ${timeLabel}
+                </div>
+
+                <div class="hourIcon">
+                    ${weatherIcon(
+                        code,
+                        isDay
+                    )}
+                </div>
+
+                <div class="hourTemp">
+                    ${temperature}°F
+                </div>
+
+                <div class="hourPop">
+                    ${pop}% rain
+                </div>
+
+            `;
+
+
+            /********************************************
+                ADD CARD
+            ********************************************/
+
+            forecast.appendChild(
+                card
+            );
+
+        }
+
+    }
+
+    catch(err) {
+
+        console.error(err);
+
+        document.getElementById(
+            "error"
+        ).textContent =
+
+            "Weather update failed: " +
+            err.message;
+    }
+
+}
+
+
+/****************************************************************
+    INITIAL UPDATE
+****************************************************************/
+
+updateWeather();
+
+
+/****************************************************************
+    REFRESH EVERY HOUR
+****************************************************************/
+
+setInterval(
+    updateWeather,
+    3600000
+);
+
+</script>
+
+</body>
+</html>
+
