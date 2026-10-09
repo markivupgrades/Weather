@@ -628,22 +628,16 @@ function chooseVideo(code, isDay) {
     switch(code) {
 
         case 0:
+        case 1:
             return "videos/clear.mp4";
 
-        case 1:
-            return isDay
-                ? "videos/clear.mp4"
-                : "videos/clear.mp4";
-
         case 2:
+        case 45:
+        case 48:
             return "videos/partly_cloudy.mp4";
 
         case 3:
             return "videos/overcast.mp4";
-
-        case 45:
-        case 48:
-            return "videos/partly_cloudy.mp4";
 
         case 51:
         case 53:
@@ -1011,103 +1005,66 @@ async function updateWeather() {
                 local.minute >= 30
             )
         ) {
-
             dayIndex = 1;
         }
 
 
-        /************************************************
-            SELECT DAILY FORECAST
-        ************************************************/
-
         const forecastCode =
-            daily.weather_code[
-                dayIndex
-            ];
+            daily.weather_code[dayIndex];
 
         const forecastHigh =
             Math.round(
-                daily.temperature_2m_max[
-                    dayIndex
-                ]
+                daily.temperature_2m_max[dayIndex]
             );
 
         const forecastLow =
             Math.round(
-                daily.temperature_2m_min[
-                    dayIndex
-                ]
+                daily.temperature_2m_min[dayIndex]
             );
 
         const forecastRain =
-            daily.precipitation_probability_max[
-                dayIndex
-            ];
+            daily.precipitation_probability_max[dayIndex];
 
 
         /************************************************
-            QUADRANT I TITLE
+            QUADRANT I
+            TODAY / TOMORROW FORECAST
         ************************************************/
 
         document.getElementById(
             "todayTitle"
         ).textContent =
-
             dayIndex === 0
                 ? "Today's Forecast"
                 : "Tomorrow's Forecast";
 
-
-        /************************************************
-            QUADRANT I ICON
-        ************************************************/
-
         document.getElementById(
             "todayIcon"
         ).textContent =
-
             weatherIcon(
                 forecastCode,
                 true
             );
 
-
-        /************************************************
-            QUADRANT I DESCRIPTION
-        ************************************************/
-
         document.getElementById(
             "todayCondition"
         ).textContent =
-
             weatherDescription(
                 forecastCode
             );
 
-
-        /************************************************
-            QUADRANT I HIGH / LOW
-        ************************************************/
-
         document.getElementById(
             "todayTemps"
         ).textContent =
-
             "High " +
             forecastHigh +
             "° / Low " +
             forecastLow +
             "°";
 
-
-        /************************************************
-            QUADRANT I PRECIPITATION
-        ************************************************/
-
         document.getElementById(
             "todayRain"
         ).textContent =
-
             forecastRain +
             "% chance of precipitation";
 
@@ -1120,182 +1077,113 @@ async function updateWeather() {
             data.hourly;
 
         const forecast =
-            document.getElementById(
-                "forecast"
-            );
+            document.getElementById("forecast");
 
         forecast.innerHTML = "";
 
-
-        /************************************************
-            FIND CURRENT HOUR
-        ************************************************/
-
         const currentIndex =
-            findCurrentHour(
-                hourly
-            );
+            findCurrentHour(hourly);
 
 
         if(currentIndex === -1) {
-
             throw new Error(
                 "Unable to locate current forecast hour."
             );
         }
 
 
-        /************************************************
-            SHOW NOW + NEXT 9 HOURS
-        ************************************************/
+        /*
+            Skip the current hour and show only
+            the next 9 hourly cards.
+        */
 
         for(
-            let offset = 0;
+            let offset = 1;
             offset <= 9;
             offset++
         ) {
 
             const index =
-                currentIndex +
-                offset;
+                currentIndex + offset;
 
-
-            if(
-                index >=
-                hourly.time.length
-            ) {
-
+            if(index >= hourly.time.length) {
                 break;
             }
 
-
-            /********************************************
-                CREATE CARD
-            ********************************************/
-
             const card =
-                document.createElement(
-                    "div"
-                );
+                document.createElement("div");
 
-            card.className =
-                "hour";
-
-
-            /********************************************
-                HOURLY DATA
-            ********************************************/
+            card.className = "hour";
 
             const time =
                 hourly.time[index];
 
             const temperature =
                 Math.round(
-                    hourly.temperature_2m[
-                        index
-                    ]
+                    hourly.temperature_2m[index]
                 );
 
             const pop =
-                hourly.precipitation_probability[
-                    index
-                ];
+                hourly.precipitation_probability[index];
 
             const code =
-                hourly.weather_code[
-                    index
-                ];
+                hourly.weather_code[index];
 
             const isDay =
-                hourly.is_day[
-                    index
-                ] === 1;
-
-
-            /********************************************
-                TIME LABEL
-            ********************************************/
+                hourly.is_day[index] === 1;
 
             const timeLabel =
+                formatForecastTime(time);
 
-                offset === 0
+            card.innerHTML =
+                `
+                    <div class="hourTime">
+                        ${timeLabel}
+                    </div>
 
-                    ? "NOW"
+                    <div class="hourIcon">
+                        ${weatherIcon(code, isDay)}
+                    </div>
 
-                    : formatForecastTime(
-                        time
-                    );
+                    <div class="hourTemp">
+                        ${temperature}°
+                    </div>
 
+                    <div class="hourPop">
+                        ${pop}% rain
+                    </div>
+                `;
 
-            /********************************************
-                CARD CONTENT
-            ********************************************/
-
-            card.innerHTML = `
-
-                <div class="hourTime">
-                    ${timeLabel}
-                </div>
-
-                <div class="hourIcon">
-                    ${weatherIcon(
-                        code,
-                        isDay
-                    )}
-                </div>
-
-                <div class="hourTemp">
-                    ${temperature}°F
-                </div>
-
-                <div class="hourPop">
-                    ${pop}% rain
-                </div>
-
-            `;
-
-
-            /********************************************
-                ADD CARD
-            ********************************************/
-
-            forecast.appendChild(
-                card
-            );
-
+            forecast.appendChild(card);
         }
 
-    }
 
-    catch(err) {
-
-        console.error(err);
+    } catch(error) {
+        console.error(error);
 
         document.getElementById(
             "error"
         ).textContent =
-
             "Weather update failed: " +
-            err.message;
+            error.message;
     }
-
 }
 
 
-/****************************************************************
+/************************************************
     INITIAL UPDATE
-****************************************************************/
+************************************************/
 
 updateWeather();
 
 
-/****************************************************************
-    REFRESH EVERY HOUR
-****************************************************************/
+/************************************************
+    REFRESH EVERY 30 MINUTES
+************************************************/
 
 setInterval(
     updateWeather,
-    3600000
+    30 * 60 * 1000
 );
 
 </script>
